@@ -22,6 +22,8 @@ import org.drools.persistence.api.PersistenceContextManager;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.KieSession;
 
+import org.jboss.seam.transaction.Transaction;
+
 /**
  * This class manages {@link JpaPersistenceContext} objects, and the underlying persistence context ({@link EntityManager}) 
  * instances for a persistent {@link KieSession} and other infrastructure classes that use persistence in KIE projects.
@@ -52,7 +54,21 @@ public class JpaPersistenceContextManager extends AbstractPersistenceContextMana
     
     public PersistenceContext getApplicationScopedPersistenceContext() {
 
-        return new JpaPersistenceContext( getApplicationScopedEntityManager(), txm );
+        return new JpaPersistenceContext( getApplicationScopedEntityManager(), txm ) {
+            @Override
+            public void joinTransaction() {
+                try {
+                    super.joinTransaction();
+                } catch (Exception e) {
+                    try {
+                        log.error("joinTransaction failed, tx status: #0", e, Transaction.instance().getStatus());
+                    } catch (Exception e2) {
+                        e2.printStackTrace();
+                    }
+                    throw e;
+                }
+            }
+        };
     }
 
     public PersistenceContext getCommandScopedPersistenceContext() {

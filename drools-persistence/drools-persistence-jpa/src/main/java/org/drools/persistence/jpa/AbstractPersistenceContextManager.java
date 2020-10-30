@@ -19,6 +19,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 
 import org.drools.persistence.api.TransactionManager;
+import org.jboss.seam.log.Log;
+import org.jboss.seam.log.Logging;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
 import org.kie.api.runtime.KieSession;
@@ -53,6 +55,8 @@ public abstract class AbstractPersistenceContextManager {
 
     protected volatile boolean                    internalAppScopedEntityManagerFlag;
     protected volatile boolean                    internalCmdScopedEntityManagerFlag;
+
+	protected Log log = Logging.getLog(getClass());
 
     public AbstractPersistenceContextManager(Environment env) {
         this.env = env;

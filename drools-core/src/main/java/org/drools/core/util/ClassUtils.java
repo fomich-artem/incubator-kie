@@ -65,6 +65,8 @@ public final class ClassUtils {
 
     private static final Map<String, Class<?>> classes = Collections.synchronizedMap( new HashMap() );
 
+    private static final Map<String, Class> replClasses = Collections.synchronizedMap( new HashMap() );
+
     private static final Map<String, Constructor<?>> constructors = Collections.synchronizedMap( new HashMap() );
 
     private static final String STAR    = "*";
@@ -899,6 +901,9 @@ public final class ClassUtils {
                 final String clsName = "[" + abbreviationMap.get(className);
                 clazz = Class.forName(clsName, initialize, classLoader).getComponentType();
             } else {
+                clazz = replClasses.get( className );
+                if (clazz != null)
+                    return clazz;
                 clazz = Class.forName(toCanonicalName( className ), initialize, classLoader);
             }
             return clazz;
@@ -917,6 +922,20 @@ public final class ClassUtils {
 
             throw ex;
         }
+    }
+
+    static Class<?> tryGetClass(String className) {
+        Class<?> result = null;
+        try {
+            result = Class.forName(className);
+        } catch (ClassNotFoundException e) {}
+        return result;
+    }
+
+    public static void registerClassReplacement(String originalClassName, String replacementClassName) {
+        Class<?> replacementClass = tryGetClass(replacementClassName);
+        if (replacementClass != null)
+            replClasses.put(originalClassName, replacementClass);
     }
 
     private static String toCanonicalName(String className) {

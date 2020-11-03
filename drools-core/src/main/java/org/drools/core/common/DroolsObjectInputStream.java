@@ -39,6 +39,11 @@ public class DroolsObjectInputStream extends ObjectInputStream
     implements
     DroolsObjectInput {
 
+	@Deprecated
+    public static void registerClassReplacement(String originalClassName, String replacementClassName) {
+    	ClassUtils.registerClassReplacement(originalClassName, replacementClassName);
+    }
+
     private ClassLoader                     classLoader;
     private InternalKnowledgeBase           kBase;
     private InternalWorkingMemory           workingMemory;

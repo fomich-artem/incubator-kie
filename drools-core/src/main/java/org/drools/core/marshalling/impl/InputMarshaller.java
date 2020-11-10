@@ -35,11 +35,17 @@ import org.drools.core.time.impl.CronTrigger;
 import org.drools.core.time.impl.IntervalTrigger;
 import org.drools.core.time.impl.PointInTimeTrigger;
 import org.drools.core.util.StringUtils;
+import org.jboss.seam.log.Log;
+import org.jboss.seam.log.Logging;
 import org.kie.api.marshalling.ObjectMarshallingStrategy;
+import org.kie.api.openicar.variable.ConverterException;
+import org.kie.api.openicar.variable.VariableValueWrapper;
 import org.kie.api.runtime.rule.EntryPoint;
 import org.kie.api.runtime.rule.RuleRuntime;
 
 public class InputMarshaller {
+
+    protected static Log log = Logging.getLog(InputMarshaller.class);
 
     public static InternalFactHandle readFactHandle( MarshallerReaderContext context ) throws IOException,
             ClassNotFoundException {
@@ -133,6 +139,10 @@ public class InputMarshaller {
     }
 
     public static WorkItem readWorkItem( MarshallerReaderContext context ) throws IOException {
+        return readWorkItem(context, true);
+    }
+
+    public static WorkItem readWorkItem(MarshallerReaderContext context, boolean includeVariables) throws IOException {
         ObjectInputStream stream = (ObjectInputStream) context;
 
         WorkItemImpl workItem = new WorkItemImpl();
@@ -141,6 +151,7 @@ public class InputMarshaller {
         workItem.setName( stream.readUTF() );
         workItem.setState( stream.readInt() );
 
+        if (includeVariables) {
         //WorkItem Paramaters
         int nbVariables = stream.readInt();
         if (nbVariables > 0) {
@@ -173,13 +184,23 @@ public class InputMarshaller {
                     }
 
                     Object value = strategy.read( stream );
-                    workItem.setParameter( name,
-                                           value );
+
+                        log.debug("restore workitem #0 parameter: name = #1, from value = #2", workItem.getId(), name, value);
+                        if (value instanceof VariableValueWrapper) {
+                            try {
+                                value = ((VariableValueWrapper)value).getValue();
+                            } catch (ConverterException e) {
+                                throw new ConverterException("Could not reload variable " + name + " in workitem " + workItem.getId(), e);
+                            }
+                        }
+
+                        workItem.setParameter(name, value);
                 } catch (ClassNotFoundException e) {
                     throw new IllegalArgumentException(
-                                                        "Could not reload variable " + name );
+                                                        "Could not reload variable " + name + " in workitem " + workItem.getId(), e);
                 }
             }
+        }
         }
 
         return workItem;

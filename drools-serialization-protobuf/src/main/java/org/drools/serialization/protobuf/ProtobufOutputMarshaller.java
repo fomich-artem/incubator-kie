@@ -202,16 +202,18 @@ public class ProtobufOutputMarshaller {
 
                 // this now just assigns the writer, it will not write out any timer information
                 context.setParameterObject( _pdata );
-                processMarshaller.writeProcessTimers( context );
+                //processMarshaller.writeProcessTimers( context );
 
                 _session.setProcessData( _pdata.build() );
             }
 
+            /*
             Timers _timers = writeTimers( context.getWorkingMemory().getTimerService().getTimerJobInstances( context.getWorkingMemory().getIdentifier() ),
                                           context );
             if ( _timers != null ) {
                 _session.setTimers( _timers );
             }
+             */
 
             return _session.build();
         } finally {

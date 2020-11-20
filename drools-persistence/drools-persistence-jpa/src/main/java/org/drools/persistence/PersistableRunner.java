@@ -114,7 +114,9 @@ public class PersistableRunner implements SingleSessionCommandService {
             registerRollbackSync();
 
             persistenceContext.joinTransaction();
+            if (isPersistentSession()) {
             this.sessionInfo = (SessionInfo) persistenceContext.persist( this.sessionInfo );
+            }
             registerUpdateSync();
             txm.commit( transactionOwner );
         } catch ( RuntimeException re ) {
@@ -128,12 +130,18 @@ public class PersistableRunner implements SingleSessionCommandService {
                                         t1 );
         }
 
+        if (isPersistentSession()) {
         // update the session id to be the same as the session info id
         ((InternalKnowledgeRuntime) ksession).setIdentifier( this.sessionInfo.getId());
+        } else {
+            ((InternalKnowledgeRuntime) ksession).setIdentifier( getSessionId() );
+        }
     }
 
     protected void initNewKnowledgeSession(KieBase kbase, KieSessionConfiguration conf) {
+        if (isPersistentSession()) {
         this.sessionInfo = new SessionInfo();
+        }
 
         // create session but bypass command service
         this.ksession = kbase.newKieSession( conf,
@@ -141,6 +149,7 @@ public class PersistableRunner implements SingleSessionCommandService {
 
         initKieSessionMBeans(this.ksession);
 
+        if (isPersistentSession()) {
         this.marshallingHelper = new SessionMarshallingHelper( this.ksession, conf );
 
         MarshallingConfigurationImpl config = (MarshallingConfigurationImpl) this.marshallingHelper.getMarshaller().getMarshallingConfiguration();
@@ -150,6 +159,7 @@ public class PersistableRunner implements SingleSessionCommandService {
         this.sessionInfo.setJPASessionMashallingHelper( this.marshallingHelper );
 
         ((InternalKnowledgeRuntime) this.ksession).setEndOperationListener( new EndOperationListenerImpl(this.txm, this.sessionInfo ) );
+        }
 
         this.runner = new TransactionInterceptor();
 
@@ -219,6 +229,8 @@ public class PersistableRunner implements SingleSessionCommandService {
                                 KieBase kbase,
                                 KieSessionConfiguration conf,
                                 PersistenceContext persistenceContext) {
+        if (!isPersistentSession())
+            return;
 
         if ( !doRollback && this.ksession != null ) {
             return;
@@ -440,12 +452,14 @@ public class PersistableRunner implements SingleSessionCommandService {
 
             persistenceContext.joinTransaction();
 
+            if (isPersistentSession()) {
             initExistingKnowledgeSession( this.sessionInfo.getId(),
                     this.marshallingHelper.getKbase(),
                     this.marshallingHelper.getConf(),
                     persistenceContext );
 
             persistenceContext.remove(this.sessionInfo);
+            }
 
             txm.commit( transactionOwner );
 
@@ -520,6 +534,8 @@ public class PersistableRunner implements SingleSessionCommandService {
                 this.service.jpm.resetApplicationScopedPersistenceContext();
             }
 
+            if (!service.isPersistentSession())
+                ((StatefulKnowledgeSessionImpl) ksession).reset();
         }
 
         public void beforeCompletion() {
@@ -593,10 +609,12 @@ public class PersistableRunner implements SingleSessionCommandService {
 
                 persistenceContext.joinTransaction();
 
+                if (isPersistentSession()) {
                 initExistingKnowledgeSession( sessionInfo.getId(),
                         marshallingHelper.getKbase(),
                         marshallingHelper.getConf(),
                         persistenceContext );
+                }
 
                 jpm.beginCommandScopedEntityManager();
 
@@ -625,6 +643,10 @@ public class PersistableRunner implements SingleSessionCommandService {
         public RequestContext createContext() {
             return PersistableRunner.this.createContext();
         }
+    }
+
+    protected boolean isPersistentSession() {
+        return true;
     }
 
 }

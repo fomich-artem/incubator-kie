@@ -24,6 +24,7 @@ import org.drools.core.process.instance.impl.WorkItemImpl;
 import org.drools.persistence.api.PersistenceContext;
 import org.drools.persistence.api.PersistenceContextManager;
 import org.drools.persistence.info.WorkItemInfo;
+import org.kie.api.openicar.profiler.SimpleProfiler;
 import org.kie.api.runtime.Environment;
 import org.kie.api.runtime.EnvironmentName;
 import org.kie.api.runtime.process.ProcessInstance;
@@ -146,35 +147,58 @@ public class JPAWorkItemManager implements WorkItemManager {
     }
 
     public void completeWorkItem( long id, Map<String, Object> results ) {
+        SimpleProfiler.st(" - all");
+
         PersistenceContext context = getPersistenceContext();
 
         WorkItemInfo workItemInfo = null;
         if ( this.workItems != null ) {
             workItemInfo = this.workItems.get( id );
             if ( workItemInfo != null ) {
+                SimpleProfiler.st(" - merge WorkItemInfo");
                 workItemInfo = (WorkItemInfo) context.merge( workItemInfo );
+                SimpleProfiler.en(" - merge WorkItemInfo");
             }
         }
 
         if ( workItemInfo == null ) {
+            SimpleProfiler.st(" - find WorkItemInfo");
             workItemInfo = (WorkItemInfo) context.findWorkItem( id );
+            SimpleProfiler.en(" - find WorkItemInfo");
         }
 
         // work item may have been aborted
         if ( workItemInfo != null ) {
+            SimpleProfiler.st(" - internalGetWorkItem");
             WorkItem workItem = internalGetWorkItem( workItemInfo );
+            SimpleProfiler.en(" - internalGetWorkItem");
             workItem.setResults( results );
+            SimpleProfiler.st(" - getProcessInstance");
             ProcessInstance processInstance = kruntime.getProcessInstance( workItem.getProcessInstanceId() );
+            SimpleProfiler.en(" - getProcessInstance");
+            SimpleProfiler.st(" - setState(WorkItem.COMPLETED)");
             workItem.setState( WorkItem.COMPLETED );
+            SimpleProfiler.en(" - setState(WorkItem.COMPLETED)");
             // process instance may have finished already
             if ( processInstance != null ) {
+                /* this logic contains in JPAProcessInstanceManager !!!
+                if (((ProcessInstanceImpl)processInstance).getKnowledgeRuntime() == null) {
+                    System.out.println("processInstance.kruntime is null, i'll try to fix this... ");
+                    ((ProcessInstanceImpl)processInstance).setKnowledgeRuntime(kruntime);
+                }*/
+                SimpleProfiler.st(" - signalEvent(\"workItemCompleted\", workItem)");
                 processInstance.signalEvent( "workItemCompleted", workItem );
+                SimpleProfiler.en(" - signalEvent(\"workItemCompleted\", workItem)");
             }
+            SimpleProfiler.st(" - remove workiteminfo");
             context.remove( workItemInfo );
+            SimpleProfiler.en(" - remove workiteminfo");
             if ( workItems != null ) {
                 this.workItems.remove( workItem.getId() );
             }
         }
+
+        SimpleProfiler.en(" - all");
     }
 
     public void abortWorkItem( long id ) {
@@ -231,8 +255,12 @@ public class JPAWorkItemManager implements WorkItemManager {
     }
 
     private WorkItem internalGetWorkItem( WorkItemInfo workItemInfo ) {
+        SimpleProfiler.st(" - all");
         Environment env = kruntime.getEnvironment();
+        SimpleProfiler.st(" - deserialize WorkItem");
         WorkItem workItem = workItemInfo.getWorkItem( env, (InternalKnowledgeBase) kruntime.getKieBase() );
+        SimpleProfiler.en(" - deserialize WorkItem");
+        SimpleProfiler.en(" - all");
         return workItem;
     }
 
@@ -282,4 +310,9 @@ public class JPAWorkItemManager implements WorkItemManager {
         }
 
     }
+
+    public InternalKnowledgeRuntime getKruntime() {
+        return kruntime;
+    }
+
 }

@@ -36,9 +36,13 @@ public class WorkItemImpl implements WorkItem, Serializable {
     private String deploymentId;
     private long nodeInstanceId;
     private long nodeId;
+
+    private transient WorkItemSetIdHandler workItemSetIdHandler;
     
     public void setId(long id) {
         this.id = id;
+        if (workItemSetIdHandler != null)
+            workItemSetIdHandler.handleWorkItemSetId(id);
     }
     
     public long getId() {
@@ -149,4 +153,9 @@ public class WorkItemImpl implements WorkItem, Serializable {
         b.append("}]");
         return b.toString();
     }
+
+    public void setWorkItemSetIdHandler(WorkItemSetIdHandler workItemSetIdHandler) {
+        this.workItemSetIdHandler = workItemSetIdHandler;
+    }
+
 }

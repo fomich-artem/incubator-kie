@@ -95,14 +95,14 @@ public abstract class AbstractPersistenceContextManager {
         if ( cmdScopedEntityManager == null) {
             cmdScopedEntityManager = (EntityManager) env.get( EnvironmentName.CMD_SCOPED_ENTITY_MANAGER );
             if (cmdScopedEntityManager != null) {
-                this.txm.putResource(EnvironmentName.CMD_SCOPED_ENTITY_MANAGER, cmdScopedEntityManager );
+                this.txm.putResource(getCmdScopedEntityManagerTxResourceKey(), cmdScopedEntityManager );
             }
 
             if ( cmdScopedEntityManager == null) {
                 internalCmdScopedEntityManagerFlag = true;
                 cmdScopedEntityManager = this.emf.createEntityManager(); // no need to call joinTransaction as it will do so if one already exists
                 this.env.set( EnvironmentName.CMD_SCOPED_ENTITY_MANAGER, cmdScopedEntityManager );
-                this.txm.putResource(EnvironmentName.CMD_SCOPED_ENTITY_MANAGER, cmdScopedEntityManager );
+                this.txm.putResource(getCmdScopedEntityManagerTxResourceKey(), cmdScopedEntityManager );
 
             } else {
                 internalCmdScopedEntityManagerFlag = false;
@@ -134,7 +134,7 @@ public abstract class AbstractPersistenceContextManager {
                 cmdScopedEntityManager.close();
             }
             this.env.set( EnvironmentName.CMD_SCOPED_ENTITY_MANAGER, null );
-            this.txm.putResource(EnvironmentName.CMD_SCOPED_ENTITY_MANAGER, null );
+            this.txm.putResource(getCmdScopedEntityManagerTxResourceKey(), null );
             this.internalCmdScopedEntityManagerFlag = false;
         }
     }
@@ -152,6 +152,10 @@ public abstract class AbstractPersistenceContextManager {
 
     protected EntityManager getInternalCommandScopedEntityManager() { 
         return (EntityManager) txm.getResource(EnvironmentName.CMD_SCOPED_ENTITY_MANAGER);
+    }
+
+    protected String getCmdScopedEntityManagerTxResourceKey() {
+        return EnvironmentName.CMD_SCOPED_ENTITY_MANAGER;
     }
 
 }

@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Entity
-@SequenceGenerator(name="workItemInfoIdSeq", sequenceName="WORKITEMINFO_ID_SEQ")
+@SequenceGenerator(name="workItemInfoIdSeq", sequenceName="WORKITEMINFO_ID_SEQ", allocationSize = 1)
 public class WorkItemInfo implements PersistentWorkItem {
 
     private static final Logger logger = LoggerFactory.getLogger(WorkItemInfo.class);
@@ -147,7 +147,7 @@ public class WorkItemInfo implements PersistentWorkItem {
                 context.close();
             } catch ( IOException e ) {
                 e.printStackTrace();
-                throw new IllegalArgumentException( "IOException while loading work item: " + e.getMessage() );
+                throw new IllegalArgumentException( "IOException while loading work item: " + e.toString() );
             }
         }
         return workItem;
@@ -175,7 +175,7 @@ public class WorkItemInfo implements PersistentWorkItem {
             context.close();
             this.workItemByteArray = baos.toByteArray();
         } catch ( IOException e ) {
-            throw new IllegalArgumentException( "IOException while storing workItem " + workItem.getId() + ": " + e.getMessage() );
+            throw new IllegalArgumentException( "IOException while storing workItem " + workItem.getId() + ": " + e.toString() );
         }
     }
     

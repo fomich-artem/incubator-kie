@@ -151,7 +151,7 @@ public abstract class AbstractPersistenceContextManager {
     }
 
     protected EntityManager getInternalCommandScopedEntityManager() { 
-        return (EntityManager) txm.getResource(EnvironmentName.CMD_SCOPED_ENTITY_MANAGER);
+        return (EntityManager) txm.getResource(getCmdScopedEntityManagerTxResourceKey());
     }
 
     protected String getCmdScopedEntityManagerTxResourceKey() {

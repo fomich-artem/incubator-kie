@@ -35,8 +35,8 @@ import org.drools.core.time.impl.CronTrigger;
 import org.drools.core.time.impl.IntervalTrigger;
 import org.drools.core.time.impl.PointInTimeTrigger;
 import org.drools.core.util.StringUtils;
-import org.jboss.seam.log.Log;
-import org.jboss.seam.log.Logging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.kie.api.marshalling.ObjectMarshallingStrategy;
 import org.kie.api.openicar.variable.ConverterException;
 import org.kie.api.openicar.variable.VariableValueWrapper;
@@ -45,7 +45,8 @@ import org.kie.api.runtime.rule.RuleRuntime;
 
 public class InputMarshaller {
 
-    protected static Log log = Logging.getLog(InputMarshaller.class);
+    // slf4j вместо org.jboss.seam.log.Log
+    protected static Logger log = LoggerFactory.getLogger(InputMarshaller.class);
 
     public static InternalFactHandle readFactHandle( MarshallerReaderContext context ) throws IOException,
             ClassNotFoundException {
@@ -185,7 +186,7 @@ public class InputMarshaller {
 
                     Object value = strategy.read( stream );
 
-                        log.debug("restore workitem #0 parameter: name = #1, from value = #2", workItem.getId(), name, value);
+                        log.debug("restore workitem {} parameter: name = {}, from value = {}", workItem.getId(), name, value);
                         if (value instanceof VariableValueWrapper) {
                             try {
                                 value = ((VariableValueWrapper)value).getValue();

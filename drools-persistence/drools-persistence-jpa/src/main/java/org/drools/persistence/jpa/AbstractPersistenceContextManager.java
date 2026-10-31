@@ -56,7 +56,6 @@ public abstract class AbstractPersistenceContextManager {
     protected volatile boolean                    internalAppScopedEntityManagerFlag;
     protected volatile boolean                    internalCmdScopedEntityManagerFlag;
 
-	// slf4j вместо org.jboss.seam.log.Log
 	protected Logger log = LoggerFactory.getLogger(getClass());
 
     public AbstractPersistenceContextManager(Environment env) {
@@ -66,6 +65,16 @@ public abstract class AbstractPersistenceContextManager {
     }
     
     public EntityManager getApplicationScopedEntityManager() {
+        if ( this.appScopedEntityManager != null
+                && !this.appScopedEntityManager.isOpen()
+                && this.internalAppScopedEntityManagerFlag ) {
+            log.warn("Internal app scoped EntityManager is closed (failed tx?) - recreating");
+            this.internalAppScopedEntityManagerFlag = false;
+            this.env.set( EnvironmentName.APP_SCOPED_ENTITY_MANAGER, null );
+            this.txm.putResource(EnvironmentName.APP_SCOPED_ENTITY_MANAGER, null);
+            this.appScopedEntityManager = null;
+        }
+
         if ( this.appScopedEntityManager == null ) {
 
             // Use the App scoped EntityManager if the user has provided it, and it is open.
@@ -110,7 +119,7 @@ public abstract class AbstractPersistenceContextManager {
             }
         }
         cmdScopedEntityManager.joinTransaction();
-        if (this.appScopedEntityManager != null) {
+        if (this.appScopedEntityManager != null && this.appScopedEntityManager.isOpen()) {
             this.appScopedEntityManager.joinTransaction();
         }
         return cmdScopedEntityManager;
